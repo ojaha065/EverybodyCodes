@@ -6,8 +6,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.Callable;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Utils {
+	public static final Pattern LINE_BREAK_PATTERN = Pattern.compile("[\\r\\n]+");
+
 	public static String readInput(final String filename) throws IOException, URISyntaxException {
 		final URL url = Utils.class.getClassLoader().getResource(filename);
 		if (url == null) {
@@ -16,8 +20,21 @@ public class Utils {
 
 		return Files.readString(Path.of(url.toURI()), StandardCharsets.UTF_8);
 	}
+
 	public static char[] readInputAsCharArray(final String filename) throws IOException, URISyntaxException {
 		return readInput(filename).toCharArray();
+	}
+
+	public static Matcher matchInput(final String input, final Pattern pattern) {
+		final Matcher matcher = pattern.matcher(input);
+		if (matcher.matches()) {
+			return matcher;
+		}
+		throw new RuntimeException("No match found!");
+	}
+
+	public static String reverse(final String string) {
+		return new StringBuffer(string).reverse().toString();
 	}
 
 	public static void run(final String task, final Callable<Object> callable) throws Exception {
