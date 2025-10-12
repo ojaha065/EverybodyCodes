@@ -17,18 +17,23 @@ public class TheKingdomOfAlgorithmia {
 		testAll();
 
 		IO.println("=== Quest 1 ===");
-		run("Part 1", () -> calculatePotionsForEnemies(readInputAsCharArray("Quest1Part1.txt")));
-		run("Part 2", () -> calculatePotionsForGroups(readInput("Quest1Part2.txt"), 2));
-		run("Part 3", () -> calculatePotionsForGroups(readInput("Quest1Part3.txt"), 3));
+		run("Part 1", () -> calculatePotionsForEnemies(readInputAsCharArray("TheKingdomOfAlgorithmia/Quest1Part1.txt")));
+		run("Part 2", () -> calculatePotionsForGroups(readInput("TheKingdomOfAlgorithmia/Quest1Part2.txt"), 2));
+		run("Part 3", () -> calculatePotionsForGroups(readInput("TheKingdomOfAlgorithmia/Quest1Part3.txt"), 3));
 
 		IO.println("=== Quest 2 ===");
-		run("Part 1", () -> countRunicWordsAndSymbols(readInput("Quest2Part1.txt"), false).wordCount());
-		run("Part 2", () -> countRunicWordsAndSymbols(readInput("Quest2Part2.txt"), true).symbolsCount());
+		run("Part 1", () -> countRunicWordsAndSymbols(readInput("TheKingdomOfAlgorithmia/Quest2Part1.txt"), false).wordCount());
+		run("Part 2", () -> countRunicWordsAndSymbols(readInput("TheKingdomOfAlgorithmia/Quest2Part2.txt"), true).symbolsCount());
 
 		IO.println("=== Quest 3 ===");
-		run("Part 1", () -> slopeCalculator(readInput("Quest3Part1.txt"), false));
-		run("Part 2", () -> slopeCalculator(readInput("Quest3Part2.txt"), false));
-		run("Part 3", () -> slopeCalculator(readInput("Quest3Part3.txt"), true));
+		run("Part 1", () -> slopeCalculator(readInput("TheKingdomOfAlgorithmia/Quest3Part1.txt"), false));
+		run("Part 2", () -> slopeCalculator(readInput("TheKingdomOfAlgorithmia/Quest3Part2.txt"), false));
+		run("Part 3", () -> slopeCalculator(readInput("TheKingdomOfAlgorithmia/Quest3Part3.txt"), true));
+
+		IO.println("=== Quest 4 ===");
+		run("Part 1", () -> countMiniumHammerStrikes(readInputAsRows("TheKingdomOfAlgorithmia/Quest4Part1.txt", Integer::parseInt)));
+		run("Part 2", () -> countMiniumHammerStrikes(readInputAsRows("TheKingdomOfAlgorithmia/Quest4Part2.txt", Integer::parseInt)));
+		run("Part 3", () -> countMiniumHammerStrikesForPartThree(readInputAsRows("TheKingdomOfAlgorithmia/Quest4Part3.txt", Integer::parseInt)));
 	}
 
 	private static int calculatePotionsForEnemies(final char... input) {
@@ -132,6 +137,25 @@ public class TheKingdomOfAlgorithmia {
 			.sum();
 	}
 
+	private static int countMiniumHammerStrikes(final List<Integer> input) {
+		input.sort(Integer::compareTo);
+		final int shortest = input.getFirst();
+		return input.stream()
+			.skip(1L)
+			.mapToInt(i -> i - shortest)
+			.sum();
+	}
+	private static long countMiniumHammerStrikesForPartThree(final List<Integer> input) {
+		input.sort(Integer::compareTo);
+		final int median = input.get(input.size() / 2);
+
+		long result = 0;
+		for (final Integer nail : input) {
+			result += Math.abs(nail - median);
+		}
+		return result;
+	}
+
 	private static void testAll() {
 		expect(calculatePotionsForEnemies("ABBAC".toCharArray()), 5);
 		expect(calculatePotionsForGroups("AxBCDDCAxD", 2), 28);
@@ -162,6 +186,9 @@ public class TheKingdomOfAlgorithmia {
 			..######..
 			...####...
 			..........""", diagonal), expectedResult));
+
+		expect(countMiniumHammerStrikes(new ArrayList<>(List.of(3, 4, 7, 8))), 10);
+		expect(countMiniumHammerStrikesForPartThree(new ArrayList<>(List.of(2, 4, 5, 6, 8))), 8L);
 	}
 
 	private record RunicWordsAndSymbolsCount(int wordCount, long symbolsCount) {}

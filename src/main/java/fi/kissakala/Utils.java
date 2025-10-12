@@ -8,11 +8,14 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class Utils {
 	public static final Pattern LINE_BREAK_PATTERN = Pattern.compile("[\\r\\n]+");
@@ -28,6 +31,14 @@ public class Utils {
 
 	public static char[] readInputAsCharArray(final String filename) throws IOException, URISyntaxException {
 		return readInput(filename).toCharArray();
+	}
+
+	public static String[] readInputAsRows(final String filename) throws IOException, URISyntaxException {
+		return LINE_BREAK_PATTERN.split(readInput(filename));
+	}
+
+	public static <T> List<T> readInputAsRows(final String filename, final Function<String, T> mapper) throws IOException, URISyntaxException {
+		return Arrays.stream(readInputAsRows(filename)).map(mapper).collect(Collectors.toCollection(ArrayList::new));
 	}
 
 	@SuppressWarnings("unchecked")
