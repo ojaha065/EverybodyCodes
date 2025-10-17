@@ -11,12 +11,16 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+@SuppressWarnings("unused")
 public class Utils {
 	public static final Pattern LINE_BREAK_PATTERN = Pattern.compile("[\\r\\n]+");
 	public static final Pattern WHITESPACE_PATTERN = Pattern.compile("\\s+");
@@ -106,6 +110,11 @@ public class Utils {
 		}
 	}
 
+	public static <T> Predicate<T> distinctByKey(final Function<? super T, ?> keyExtractor) {
+		final Set<Object> seen = ConcurrentHashMap.newKeySet();
+		return t -> seen.add(keyExtractor.apply(t));
+	}
+
 	public static void run(final String task, final Callable<Object> callable) throws Exception {
 		final long startTime = System.currentTimeMillis();
 		final Object result = callable.call();
@@ -162,6 +171,8 @@ public class Utils {
 			new Triplet<>(5, 9, new BouncerResult(0, DIRECTION.UP)),
 			new Triplet<>(5,10, new BouncerResult(0, DIRECTION.DOWN))
 		).forEach(triplet -> expect(bouncer(triplet.first(), triplet.second(), DIRECTION.DOWN), triplet.third()));
+
+		Tree.test();
 	}
 
 	public record XY(int x, int y) {}

@@ -13,6 +13,7 @@ import static fi.kissakala.Utils.*;
  */
 public class TheKingdomOfAlgorithmia {
 	private static final Pattern QUEST_2_PATTERN = Pattern.compile("^WORDS:([A-Z,]+)[\\r\\n]+([A-Z\\s,.]+)$");
+	private static final Pattern QUEST_6_PATTERN = Pattern.compile("^([A-Z]+):([A-Z,@]+)$");
 
 	public static void solve() {
 		try {
@@ -41,6 +42,11 @@ public class TheKingdomOfAlgorithmia {
 			run("Part 1", () -> pseudoRandomClapDance(readInput("TheKingdomOfAlgorithmia/Quest5Part1.txt"), 1));
 			run("Part 2", () -> pseudoRandomClapDance(readInput("TheKingdomOfAlgorithmia/Quest5Part2.txt"), 2));
 			run("Part 3", () -> pseudoRandomClapDance(readInput("TheKingdomOfAlgorithmia/Quest5Part3.txt"), 3));
+
+			IO.println("=== Quest 6 ===");
+			run("Part 1", () -> pathToMostPowerfulFruit(readInputAsRows("TheKingdomOfAlgorithmia/Quest6Part1.txt"), false));
+			run("Part 2", () -> pathToMostPowerfulFruit(readInputAsRows("TheKingdomOfAlgorithmia/Quest6Part2.txt"), true));
+			run("Part 3", () -> pathToMostPowerfulFruit(readInputAsRows("TheKingdomOfAlgorithmia/Quest6Part3.txt"), true));
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -225,6 +231,46 @@ public class TheKingdomOfAlgorithmia {
 		}
 	}
 
+	private static String pathToMostPowerfulFruit(final String[] rows, final boolean firstLettersOnly) {
+		final Map<String, Tree.Node<String>> allNodes = new HashMap<>();
+
+		for (final String row : rows) {
+			final Matcher matcher = QUEST_6_PATTERN.matcher(row);
+			if (!matcher.matches()) {
+				throw new IllegalArgumentException("Invalid row: " + row);
+			}
+
+			final String nodeIdentifier = matcher.group(1);
+			if ("BUG".equals(nodeIdentifier) || "ANT".equals(nodeIdentifier)) {
+				continue;
+			}
+
+			final String[] nodeLinks = matcher.group(2).split(",");
+
+			final Tree.Node<String> node = allNodes.computeIfAbsent(nodeIdentifier, Tree.Node::new);
+			for (final String link : nodeLinks) {
+				if ("BUG".equals(link) || "ANT".equals(link)) {
+					continue;
+				}
+				node.addChild("@".equals(link) ? new Tree.Node<>(link) : allNodes.computeIfAbsent(link, Tree.Node::new));
+			}
+		}
+
+		final Tree<String> tree = new Tree<>(allNodes.get("RR"));
+		return tree.findNodes("@").parallelStream()
+			.map(endNode -> tree.getPath(tree.root(), endNode))
+			.collect(Collectors.collectingAndThen(
+				Collectors.groupingBy(List::size, Collectors.toUnmodifiableList()),
+				grouped -> grouped.values().stream()
+					.filter(list -> list.size() == 1)
+					.map(List::getFirst)
+					.flatMap(Collection::stream)
+					.map(Tree.Node::getValue)
+					.map(s -> firstLettersOnly ? String.valueOf(s.charAt(0)) : s)
+					.collect(Collectors.joining())
+			));
+	}
+
 	private static void testAll() {
 		expect(calculatePotionsForEnemies("ABBAC".toCharArray()), 5);
 		expect(calculatePotionsForGroups("AxBCDDCAxD", 2), 28);
@@ -273,6 +319,8 @@ public class TheKingdomOfAlgorithmia {
 			2 3 4 5
 			6 7 8 9
 			""", 3), 6584L);
+
+		expect(pathToMostPowerfulFruit(new String[]{"RR:A,B,C", "A:D,E", "B:F,@", "C:G,H", "D:@", "E:@", "F:@", "G:@", "H:@"}, false), "RRB@");
 	}
 
 	private record RunicWordsAndSymbolsCount(int wordCount, long symbolsCount) {}
