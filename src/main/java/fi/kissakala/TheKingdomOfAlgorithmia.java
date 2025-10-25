@@ -14,6 +14,7 @@ import static fi.kissakala.Utils.*;
 public class TheKingdomOfAlgorithmia {
 	private static final Pattern QUEST_2_PATTERN = Pattern.compile("^WORDS:([A-Z,]+)[\\r\\n]+([A-Z\\s,.]+)$");
 	private static final Pattern QUEST_6_PATTERN = Pattern.compile("^([A-Z]+):([A-Z,@]+)$");
+	private static final Pattern QUEST_7_PATTERN = Pattern.compile("^([A-Z]):([,=+-]+)$");
 
 	public static void solve() {
 		try {
@@ -47,6 +48,31 @@ public class TheKingdomOfAlgorithmia {
 			run("Part 1", () -> pathToMostPowerfulFruit(readInputAsRows("TheKingdomOfAlgorithmia/Quest6Part1.txt"), false));
 			run("Part 2", () -> pathToMostPowerfulFruit(readInputAsRows("TheKingdomOfAlgorithmia/Quest6Part2.txt"), true));
 			run("Part 3", () -> pathToMostPowerfulFruit(readInputAsRows("TheKingdomOfAlgorithmia/Quest6Part3.txt"), true));
+
+			IO.println("=== Quest 7 ===");
+			run("Part 1", () -> getRankingOfPlans(readInput("TheKingdomOfAlgorithmia/Quest7Part1.txt"), null));
+			run("Part 2", () -> getRankingOfPlans(
+				readInput("TheKingdomOfAlgorithmia/Quest7Part2.txt"),
+				getShortestPathIn2dGrid(
+					stringAs2DArray(readInput("TheKingdomOfAlgorithmia/Quest7Racetracks/Part2.txt"),
+						null,
+						s -> s.charAt(0),
+						Character.class
+					),
+					new XY(0, 0), new XY(0, 0), ' ')
+				.toCharArray()
+			));
+			run("Part 3", () -> getNumberOfWinningPlans(
+				readInput("TheKingdomOfAlgorithmia/Quest7Part3.txt"),
+				getShortestPathIn2dGrid(
+					stringAs2DArray(readInput("TheKingdomOfAlgorithmia/Quest7Racetracks/Part3.txt"),
+						null,
+						s -> s.charAt(0),
+						Character.class
+					),
+					new XY(0, 0), new XY(0, 0), ' ')
+					.toCharArray()
+			));
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -271,6 +297,59 @@ public class TheKingdomOfAlgorithmia {
 			));
 	}
 
+	private static String getRankingOfPlans(final String input, final char[] track) {
+		return readInputStringAsRows(input, QUEST_7_PATTERN::matcher).stream()
+			.filter(Matcher::matches)
+			.map(matcher -> new Pair<>(matcher.group(1), matcher.group(2).split(",")))
+			.map(pair -> new Pair<>(pair.first(), String.join("", pair.second()).toCharArray()))
+			.sorted(Comparator.comparing(pair -> getEssenceGathered(pair.second(), track, 10), Comparator.reverseOrder()))
+			.map(Pair::first)
+			.collect(Collectors.joining());
+	}
+	private static long getNumberOfWinningPlans(final String input, final char[] track) {
+		final Matcher rivalMatcher = QUEST_7_PATTERN.matcher(input);
+		if (!rivalMatcher.matches()) {
+			throw new IllegalArgumentException("Bad input: " + input);
+		}
+		final long rivalResult = getEssenceGathered(String.join("", rivalMatcher.group(2).split(",")).toCharArray(), track, 2024);
+
+		return generatePermutations('+', 5, '-', 3, '=', 3).parallelStream()
+			.filter(plan -> getEssenceGathered(plan.toCharArray(), track, 2024) > rivalResult)
+			.count();
+	}
+	private static long getEssenceGathered(final char[] plan, final char[] track, final int rounds) {
+		long result = 0L;
+		int powerLevel = 10;
+		int posOnPlan = -1;
+
+		for (int round = 0; round < rounds; round++) {
+			if (track == null) { // Part 1
+				final char c = plan[round % plan.length];
+				if (c == '+') powerLevel++;
+				else if (c == '-' && powerLevel > 0) powerLevel--;
+				result += powerLevel;
+			}
+			else {
+				int posOnTrack = 0;
+				do {
+					posOnTrack = ++posOnTrack % track.length;
+
+					final char cFromTrack = track[posOnTrack];
+					final char cFromPlan = plan[++posOnPlan % plan.length];
+
+					if (cFromTrack == '+') powerLevel++;
+					else if (cFromTrack == '-') powerLevel = Math.max(powerLevel - 1, 0);
+					else if (cFromPlan == '+') powerLevel++;
+					else if (cFromPlan == '-' && powerLevel > 0) powerLevel--;
+
+					result += powerLevel;
+				} while (posOnTrack != 0);
+			}
+		}
+
+		return result;
+	}
+
 	private static void testAll() {
 		expect(calculatePotionsForEnemies("ABBAC".toCharArray()), 5);
 		expect(calculatePotionsForGroups("AxBCDDCAxD", 2), 28);
@@ -321,6 +400,19 @@ public class TheKingdomOfAlgorithmia {
 			""", 3), 6584L);
 
 		expect(pathToMostPowerfulFruit(new String[]{"RR:A,B,C", "A:D,E", "B:F,@", "C:G,H", "D:@", "E:@", "F:@", "G:@", "H:@"}, false), "RRB@");
+
+		expect(getRankingOfPlans("""
+			A:+,-,=,=
+			B:+,=,-,+
+			C:=,-,+,+
+			D:=,=,=,+
+			""", null), "BDCA");
+		expect(getRankingOfPlans("""
+			A:+,-,=,=
+			B:+,=,-,+
+			C:=,-,+,+
+			D:=,=,=,+
+			""", ("S+===" + "+" + reverse("=+=-+") + "-").toCharArray()), "DCBA");
 	}
 
 	private record RunicWordsAndSymbolsCount(int wordCount, long symbolsCount) {}

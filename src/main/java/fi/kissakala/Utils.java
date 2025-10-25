@@ -8,10 +8,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -19,6 +16,7 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @SuppressWarnings("unused")
 public class Utils {
@@ -43,7 +41,10 @@ public class Utils {
 	}
 
 	public static <T> List<T> readInputAsRows(final String filename, final Function<String, T> mapper) throws IOException, URISyntaxException {
-		return Arrays.stream(readInputAsRows(filename)).map(mapper).collect(Collectors.toCollection(ArrayList::new));
+		return readInputStringAsRows(readInput(filename), mapper);
+	}
+	public static <T> List<T> readInputStringAsRows(final String input, final Function<String, T> mapper) {
+		return Arrays.stream(LINE_BREAK_PATTERN.split(input)).map(mapper).collect(Collectors.toCollection(ArrayList::new));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -110,9 +111,84 @@ public class Utils {
 		}
 	}
 
+	public static <T> String getShortestPathIn2dGrid(final T[][] grid, final XY start, final XY end, final T wall) {
+		final T[][] g = pad2DArray(grid, 1, wall);
+		final StringBuilder builder = new StringBuilder();
+
+		int x = start.x() + 1;
+		int y = start.y() + 1;
+		if (g[y][x] == wall) {
+			throw new RuntimeException("Cannot start in a wall!");
+		}
+
+		final HashSet<XY> visited = new HashSet<>();
+		while (builder.isEmpty() || x != end.x() + 1 || y != end.y() + 1) {
+			builder.append(g[y][x]);
+
+			if (g[y][x + 1] != wall && !visited.contains(new XY(x + 1, y))) x++;
+			else if (g[y + 1][x] != wall && !visited.contains(new XY(x, y + 1))) y++;
+			else if (g[y][x - 1] != wall && !visited.contains(new XY(x - 1, y))) x--;
+			else if (g[y - 1][x] != wall && !visited.contains(new XY(x, y - 1))) y--;
+			else throw new RuntimeException("No path found!");
+
+			visited.add(new XY(x, y));
+		}
+
+		return builder.toString();
+	}
+
+	public static List<String> generatePermutations(final char firstChar, final int firstCount,
+													final char secondChar, final int secondCount,
+													final char thirdChar, final int thirdCount) {
+		final List<String> result = new ArrayList<>();
+		final char[] buffer = new char[firstCount + secondCount + thirdCount];
+		backtrack(buffer, 0, firstCount, secondCount, thirdCount, firstChar, secondChar, thirdChar, result);
+		return result;
+	}
+	private static void backtrack(final char[] buf, final int pos,
+								  final int firstLeft, final int secondLeft, final int thirdLeft,
+								  final char firstChar, final char secondChar, final char thirdChar,
+								  final List<String> result) {
+		if (pos == buf.length) {
+			result.add(new String(buf));
+			return;
+		}
+
+		if (firstLeft > 0) {
+			buf[pos] = firstChar;
+			backtrack(buf, pos + 1, firstLeft - 1, secondLeft, thirdLeft, firstChar, secondChar, thirdChar, result);
+		}
+		if (secondLeft > 0) {
+			buf[pos] = secondChar;
+			backtrack(buf, pos + 1, firstLeft, secondLeft - 1, thirdLeft, firstChar, secondChar, thirdChar, result);
+		}
+		if (thirdLeft > 0) {
+			buf[pos] = thirdChar;
+			backtrack(buf, pos + 1, firstLeft, secondLeft, thirdLeft - 1, firstChar, secondChar, thirdChar, result);
+		}
+	}
+
 	public static <T> Predicate<T> distinctByKey(final Function<? super T, ?> keyExtractor) {
 		final Set<Object> seen = ConcurrentHashMap.newKeySet();
 		return t -> seen.add(keyExtractor.apply(t));
+	}
+
+	public static <T> int findIndex(final T[] array, final T value) {
+		return IntStream.range(0, array.length)
+			.filter(i -> Objects.equals(array[i], value))
+			.findFirst()
+			.orElse(-1);
+	}
+
+	public static <T> XY findFrom2dArray(final T[][] grid, final T value) {
+		for (int y = 0; y < grid.length; y++) {
+			for (int x = 0; x < grid[y].length; x++) {
+				if (Objects.equals(grid[y][x], value)) {
+					return new XY(x, y);
+				}
+			}
+		}
+		throw new RuntimeException(value + " not found from grid");
 	}
 
 	public static void run(final String task, final Callable<Object> callable) throws Exception {
@@ -172,11 +248,21 @@ public class Utils {
 			new Triplet<>(5,10, new BouncerResult(0, DIRECTION.DOWN))
 		).forEach(triplet -> expect(bouncer(triplet.first(), triplet.second(), DIRECTION.DOWN), triplet.third()));
 
+		expect(getShortestPathIn2dGrid(stringAs2DArray("""
+			S+===
+			-   +
+			=+=-+
+			""", null, s -> s.charAt(0), Character.class), new XY(0, 0), new XY(0, 0), ' '), "S+===" + "+" + reverse("=+=-+") + "-");
+
+		expect(new HashSet<>(generatePermutations('A', 5, 'B', 3, 'C', 3)).size(), 9240);
+
 		Tree.test();
 	}
 
-	public record XY(int x, int y) {}
 	public record BouncerResult(int index, DIRECTION direction) {}
+
+	public record XY(int x, int y) {}
+	public record Pair<T, S>(T first, S second) {}
 	public record Triplet<T, S, U>(T first, S second, U third) {}
 
 	public enum DIRECTION {
