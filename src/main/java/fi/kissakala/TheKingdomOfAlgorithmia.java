@@ -73,6 +73,10 @@ public class TheKingdomOfAlgorithmia {
 					new XY(0, 0), new XY(0, 0), ' ')
 					.toCharArray()
 			));
+
+			IO.println("=== Quest 8 ===");
+			run("Part 1", () -> solveQuest8Part1(readInputAsInt("TheKingdomOfAlgorithmia/Quest8Part1.txt")));
+			run("Part 2", () -> solveQuest8Part2(readInputAsInt("TheKingdomOfAlgorithmia/Quest8Part2.txt"), 1111, 20240000));
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -350,6 +354,31 @@ public class TheKingdomOfAlgorithmia {
 		return result;
 	}
 
+	private static int solveQuest8Part1(final int input) {
+		int stonesLeft = input - 1;
+		int currentWidth = 1;
+
+		while (stonesLeft > 0) {
+			currentWidth += 2;
+			stonesLeft -= currentWidth;
+		}
+
+		return currentWidth * Math.abs(stonesLeft);
+	}
+	private static int solveQuest8Part2(final int numberOfPriests, final int numberOfAcolytes, final int availableBlocks) {
+		int stonesLeft = availableBlocks - 1;
+		int currentWidth = 1;
+		int currentThickness = 1;
+
+		while (stonesLeft > 0) {
+			currentThickness = (currentThickness * numberOfPriests) % numberOfAcolytes;
+			currentWidth += 2;
+			stonesLeft -= currentWidth * currentThickness;
+		}
+
+		return currentWidth * Math.abs(stonesLeft);
+	}
+
 	private static void testAll() {
 		expect(calculatePotionsForEnemies("ABBAC".toCharArray()), 5);
 		expect(calculatePotionsForGroups("AxBCDDCAxD", 2), 28);
@@ -413,6 +442,9 @@ public class TheKingdomOfAlgorithmia {
 			C:=,-,+,+
 			D:=,=,=,+
 			""", ("S+===" + "+" + reverse("=+=-+") + "-").toCharArray()), "DCBA");
+
+		expect(solveQuest8Part1(13), 21);
+		expect(solveQuest8Part2(3, 5, 50), 27);
 	}
 
 	private record RunicWordsAndSymbolsCount(int wordCount, long symbolsCount) {}

@@ -32,6 +32,10 @@ public class Utils {
 		return Files.readString(Path.of(url.toURI()), StandardCharsets.UTF_8);
 	}
 
+	public static int readInputAsInt(final String filename) throws IOException, URISyntaxException {
+		return Integer.parseInt(readInput(filename));
+	}
+
 	public static char[] readInputAsCharArray(final String filename) throws IOException, URISyntaxException {
 		return readInput(filename).toCharArray();
 	}
