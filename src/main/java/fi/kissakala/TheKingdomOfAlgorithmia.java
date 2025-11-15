@@ -77,6 +77,11 @@ public class TheKingdomOfAlgorithmia {
 			IO.println("=== Quest 8 ===");
 			run("Part 1", () -> solveQuest8Part1(readInputAsInt("TheKingdomOfAlgorithmia/Quest8Part1.txt")));
 			run("Part 2", () -> solveQuest8Part2(readInputAsInt("TheKingdomOfAlgorithmia/Quest8Part2.txt"), 1111, 20240000));
+
+			IO.println("=== Quest 9 ===");
+			run("Part 1", () -> solveQuest9(readInputAsRows("TheKingdomOfAlgorithmia/Quest9Part1.txt", Integer::parseInt), List.of(1, 3, 5, 10)));
+			run("Part 2", () -> solveQuest9(readInputAsRows("TheKingdomOfAlgorithmia/Quest9Part2.txt", Integer::parseInt), List.of(1, 3, 5, 10, 15, 16, 20, 24, 25, 30)));
+			run("Part 3", () -> solveQuest9Part3(readInputAsRows("TheKingdomOfAlgorithmia/Quest9Part3.txt", Integer::parseInt), List.of(1, 3, 5, 10, 15, 16, 20, 24, 25, 30, 37, 38, 49, 50, 74, 75, 100, 101)));
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -379,6 +384,37 @@ public class TheKingdomOfAlgorithmia {
 		return currentWidth * Math.abs(stonesLeft);
 	}
 
+	private static int solveQuest9(final List<Integer> notes, final List<Integer> stamps) {
+		final int maxTarget = notes.stream().mapToInt(Integer::intValue).max().orElseThrow();
+		final int[] dp = computeUnboundedMinCoinDp(maxTarget, stamps.toArray(Integer[]::new));
+
+		int result = 0;
+		for (final int target : notes) {
+			result += dp[target];
+		}
+		return result;
+	}
+	private static int solveQuest9Part3(final List<Integer> notes, final List<Integer> stamps) {
+		final int maxTarget = notes.stream().mapToInt(Integer::intValue).max().orElseThrow();
+		final int[] dp = computeUnboundedMinCoinDp(maxTarget, stamps.toArray(Integer[]::new));
+
+		int total = 0;
+		for (final int target : notes) {
+			final int low = Math.max(1, (target - 100 + 1) / 2);
+			final int high = Math.min(target - 1, (target + 100) / 2);
+
+			int best = Integer.MAX_VALUE;
+			for (int x = low; x <= high; x++) {
+				int y = target - x;
+				best = Math.min(best, dp[x] + dp[y]);
+			}
+
+			total += best;
+		}
+
+		return total;
+	}
+
 	private static void testAll() {
 		expect(calculatePotionsForEnemies("ABBAC".toCharArray()), 5);
 		expect(calculatePotionsForGroups("AxBCDDCAxD", 2), 28);
@@ -445,6 +481,10 @@ public class TheKingdomOfAlgorithmia {
 
 		expect(solveQuest8Part1(13), 21);
 		expect(solveQuest8Part2(3, 5, 50), 27);
+
+		expect(solveQuest9(List.of(2, 4, 7, 16), List.of(1, 3, 5, 10)), 10);
+		expect(solveQuest9(List.of(33, 41, 55, 99), List.of(1, 3, 5, 10, 15, 16, 20, 24, 25, 30)), 10);
+		expect(solveQuest9Part3(List.of(156488, 352486, 546212), List.of(1, 3, 5, 10, 15, 16, 20, 24, 25, 30, 37, 38, 49, 50, 74, 75, 100, 101)), 10449);
 	}
 
 	private record RunicWordsAndSymbolsCount(int wordCount, long symbolsCount) {}

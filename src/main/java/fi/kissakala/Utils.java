@@ -195,6 +195,45 @@ public class Utils {
 		throw new RuntimeException(value + " not found from grid");
 	}
 
+	public static int gcd(int a, int b) {
+		if (a == 0) {
+			return b;
+		}
+
+		while (b != 0) {
+			final int t = a % b;
+			a = b;
+			b = t;
+		}
+
+		return Math.abs(a);
+	}
+
+	/**
+	 * Computes the dynamic programming table for the unbounded minimum–coin (coin-change) problem.
+	 * @param target the maximum sum to compute minimum coin counts for; must be {@code >= 0}
+	 * @param coins an array of coin denominations; each value must be positive.
+	 * @return an integer array of size {@code target + 1}
+	 */
+	public static int[] computeUnboundedMinCoinDp(final int target, final Integer[] coins) {
+		Arrays.sort(coins);
+
+		final int[] dp = new int[target + 1];
+		Arrays.fill(dp, Integer.MAX_VALUE);
+		dp[0] = 0;
+
+		for (int s = 1; s <= target; s++) {
+			for (int stamp : coins) {
+				if (stamp > s) {
+					break;
+				}
+				dp[s] = Math.min(dp[s], dp[s - stamp] + 1);
+			}
+		}
+
+		return dp;
+	}
+
 	public static void run(final String task, final Callable<Object> callable) throws Exception {
 		final long startTime = System.currentTimeMillis();
 		final Object result = callable.call();
