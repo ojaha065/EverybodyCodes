@@ -20,8 +20,11 @@ import java.util.stream.IntStream;
 
 @SuppressWarnings("unused")
 public class Utils {
-	public static final Pattern LINE_BREAK_PATTERN = Pattern.compile("[\\r\\n]+");
+	public static final Pattern LINE_BREAK_PATTERN = Pattern.compile("\\R+");
+	public static final Pattern SINGLE_LINE_BREAK_PATTERN = Pattern.compile("\\R");
 	public static final Pattern WHITESPACE_PATTERN = Pattern.compile("\\s+");
+
+	public static final String ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 	public static String readInput(final String filename) throws IOException, URISyntaxException {
 		final URL url = Utils.class.getClassLoader().getResource(filename);

@@ -82,6 +82,10 @@ public class TheKingdomOfAlgorithmia {
 			run("Part 1", () -> solveQuest9(readInputAsRows("TheKingdomOfAlgorithmia/Quest9Part1.txt", Integer::parseInt), List.of(1, 3, 5, 10)));
 			run("Part 2", () -> solveQuest9(readInputAsRows("TheKingdomOfAlgorithmia/Quest9Part2.txt", Integer::parseInt), List.of(1, 3, 5, 10, 15, 16, 20, 24, 25, 30)));
 			run("Part 3", () -> solveQuest9Part3(readInputAsRows("TheKingdomOfAlgorithmia/Quest9Part3.txt", Integer::parseInt), List.of(1, 3, 5, 10, 15, 16, 20, 24, 25, 30, 37, 38, 49, 50, 74, 75, 100, 101)));
+
+			IO.println("=== Quest 10 ===");
+			run("Part 1", () -> quest10GetRunicWord(quest10ParseBlock(readInput("TheKingdomOfAlgorithmia/Quest10Part1.txt")).getFirst()));
+			run("Part 2", () -> quest10Part2(readInput("TheKingdomOfAlgorithmia/Quest10Part2.txt")));
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -415,6 +419,88 @@ public class TheKingdomOfAlgorithmia {
 		return total;
 	}
 
+	private static List<char[][]> quest10ParseBlock(final String input) {
+		final List<char[][]> grids = new ArrayList<>();
+
+		final List<String[]> rows = new ArrayList<>();
+
+		for (final String row : LINE_BREAK_PATTERN.split(input)) { // row = **LNQW** **WBPD** ...
+			final String[] rowSplit = WHITESPACE_PATTERN.split(row);
+			rows.add(rowSplit);
+		}
+
+		final int totalGrids = rows.getFirst().length;
+		final int rowsSize = rows.size();
+		final int cols = rows.getFirst()[0].length();
+
+		for (int i = 0; i < totalGrids; i++) {
+			final char[][] grid = new char[rowsSize][cols];
+
+			for (int row = 0; row < rowsSize; row++) {
+				final char[] chars = rows.get(row)[i].toCharArray();
+				System.arraycopy(chars, 0, grid[row], 0, chars.length);
+			}
+
+			grids.add(grid);
+		}
+
+		return grids;
+	}
+	private static String quest10GetRunicWord(final char[][] grid) {
+		final StringBuilder result = new StringBuilder();
+
+		for (final char[] value : grid) { // Loop rows, y = row
+			x: for (int x = 0; x < value.length; x++) { // Loop columns, x = column
+				if (value[x] == '.') { // If current location needs to be filled
+					for (final char[] chars : grid) { // Loop current column, y2 = row
+						for (final char c : value) { // Loop current row, x2 = column
+							if (c != '.' && c == chars[x]) { // We found the letter
+								result.append(chars[x]);
+								continue x;
+							}
+						}
+					}
+				}
+			}
+		}
+
+		return result.toString();
+	}
+	private static int quest10CalculateRunicWordPower(final String runicWord) {
+		return IntStream.range(0, runicWord.length())
+			.map(i -> (i + 1) * (ALPHABET.indexOf(runicWord.charAt(i)) + 1))
+			.sum();
+	}
+	private static int quest10Part2(final String input) {
+		int result = 0;
+
+		StringBuilder block = new StringBuilder();
+
+		for (String line : SINGLE_LINE_BREAK_PATTERN.split(input)) {
+			if (line.isBlank()) {
+				if (!block.isEmpty()) {
+					result += quest10ParseBlock(block.toString()).stream()
+						.map(TheKingdomOfAlgorithmia::quest10GetRunicWord)
+						.mapToInt(TheKingdomOfAlgorithmia::quest10CalculateRunicWordPower)
+						.sum();
+					block = new StringBuilder();
+				}
+			} else {
+				block.append(line).append("\n");
+			}
+		}
+
+		// last block
+		if (!block.isEmpty()) {
+			result += quest10ParseBlock(block.toString()).stream()
+				.map(TheKingdomOfAlgorithmia::quest10GetRunicWord)
+				.mapToInt(TheKingdomOfAlgorithmia::quest10CalculateRunicWordPower)
+				.sum();
+		}
+
+		return result;
+	}
+
 	private static void testAll() {
 		expect(calculatePotionsForEnemies("ABBAC".toCharArray()), 5);
 		expect(calculatePotionsForGroups("AxBCDDCAxD", 2), 28);
@@ -485,6 +571,37 @@ public class TheKingdomOfAlgorithmia {
 		expect(solveQuest9(List.of(2, 4, 7, 16), List.of(1, 3, 5, 10)), 10);
 		expect(solveQuest9(List.of(33, 41, 55, 99), List.of(1, 3, 5, 10, 15, 16, 20, 24, 25, 30)), 10);
 		expect(solveQuest9Part3(List.of(156488, 352486, 546212), List.of(1, 3, 5, 10, 15, 16, 20, 24, 25, 30, 37, 38, 49, 50, 74, 75, 100, 101)), 10449);
+
+		expect(quest10GetRunicWord(quest10ParseBlock("""
+			**PCBS**
+			**RLNW**
+			BV....PT
+			CR....HZ
+			FL....JW
+			SG....MN
+			**FTZV**
+			**GMJH**
+			""").getFirst()), "PTBVRCZHFLJWGMNS");
+		expect(quest10CalculateRunicWordPower("PTBVRCZHFLJWGMNS"), 1851);
+		expect(quest10Part2("""
+			**PCBS** **PCBS**
+			**RLNW** **RLNW**
+			BV....PT BV....PT
+			CR....HZ CR....HZ
+			FL....JW FL....JW
+			SG....MN SG....MN
+			**FTZV** **FTZV**
+			**GMJH** **GMJH**
+			
+			**PCBS** **PCBS**
+			**RLNW** **RLNW**
+			BV....PT BV....PT
+			CR....HZ CR....HZ
+			FL....JW FL....JW
+			SG....MN SG....MN
+			**FTZV** **FTZV**
+			**GMJH** **GMJH**
+			"""), 7404);
 	}
 
 	private record RunicWordsAndSymbolsCount(int wordCount, long symbolsCount) {}
