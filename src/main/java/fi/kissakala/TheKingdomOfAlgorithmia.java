@@ -15,6 +15,7 @@ public class TheKingdomOfAlgorithmia {
 	private static final Pattern QUEST_2_PATTERN = Pattern.compile("^WORDS:([A-Z,]+)[\\r\\n]+([A-Z\\s,.]+)$");
 	private static final Pattern QUEST_6_PATTERN = Pattern.compile("^([A-Z]+):([A-Z,@]+)$");
 	private static final Pattern QUEST_7_PATTERN = Pattern.compile("^([A-Z]):([,=+-]+)$");
+	private static final Pattern QUEST_11_PATTERN = Pattern.compile("([A-Z]+):([A-Z,]+)");
 
 	public static void solve() {
 		try {
@@ -86,6 +87,11 @@ public class TheKingdomOfAlgorithmia {
 			IO.println("=== Quest 10 ===");
 			run("Part 1", () -> quest10GetRunicWord(quest10ParseBlock(readInput("TheKingdomOfAlgorithmia/Quest10Part1.txt")).getFirst()));
 			run("Part 2", () -> quest10Part2(readInput("TheKingdomOfAlgorithmia/Quest10Part2.txt")));
+
+			IO.println("=== Quest 10 ===");
+			run("Part 1", () -> quest11(readInput("TheKingdomOfAlgorithmia/Quest11Part1.txt"), 4, "A"));
+			run("Part 2", () -> quest11(readInput("TheKingdomOfAlgorithmia/Quest11Part2.txt"), 10, "Z"));
+			run("Part 3", () -> quest11Part3(readInput("TheKingdomOfAlgorithmia/Quest11Part3.txt")));
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -501,6 +507,54 @@ public class TheKingdomOfAlgorithmia {
 		return result;
 	}
 
+	private static long quest11(final String input, final int days, final String start) {
+		return quest11Calc(quest11ParseNotes(input), days, start);
+	}
+	private static long quest11Part3(final String input) {
+		final Map<String, String[]> notes = quest11ParseNotes(input);
+
+		long lowest = Long.MAX_VALUE;
+		long largest = 0L;
+		for (final String start : notes.keySet()) {
+			final long result = quest11Calc(notes, 20, start);
+			if (result < lowest) {
+				lowest = result;
+			}
+			if (result > largest) {
+				largest = result;
+			}
+		}
+
+		return largest - lowest;
+	}
+	private static long quest11Calc(final Map<String, String[]> notes, final int days, final String start) {
+		final Map<String, Long> counts = new HashMap<>();
+		counts.put(start, 1L);
+
+		for (int day = 0; day < days; day++) {
+			for (final var entry : new HashMap<>(counts).entrySet()) {
+				final long currentCount = entry.getValue();
+
+				for (final String newTermite : notes.get(entry.getKey())) {
+					counts.compute(newTermite, (_,v) -> v == null ? currentCount : v + currentCount);
+				}
+
+				counts.put(entry.getKey(), counts.get(entry.getKey()) - currentCount);
+			}
+		}
+
+		return counts.values().stream().mapToLong(Long::longValue).sum();
+	}
+	private static Map<String, String[]> quest11ParseNotes(final String input) {
+		return readInputStringAsRows(input, row -> matchInput(row, QUEST_11_PATTERN)).stream()
+			.collect(Collectors.toMap(
+				matcher -> matcher.group(1),
+				matcher -> Arrays.stream(matcher.group(2).split(",")).toArray(String[]::new),
+				(_,_) -> { throw new RuntimeException("duplicate key"); },
+				HashMap::new
+			));
+	}
+
 	private static void testAll() {
 		expect(calculatePotionsForEnemies("ABBAC".toCharArray()), 5);
 		expect(calculatePotionsForGroups("AxBCDDCAxD", 2), 28);
@@ -602,6 +656,17 @@ public class TheKingdomOfAlgorithmia {
 			**FTZV** **FTZV**
 			**GMJH** **GMJH**
 			"""), 7404);
+
+		expect(quest11("""
+			A:B,C
+			B:C,A
+			C:A
+			""", 4, "A"), 8L);
+		expect(quest11Part3("""
+			A:B,C
+			B:C,A,A
+			C:A
+			"""), 268815L);
 	}
 
 	private record RunicWordsAndSymbolsCount(int wordCount, long symbolsCount) {}
